@@ -71,7 +71,7 @@ async def upload_image(
         if not api_key:
             result["analysis_error"] = "Missing GEMINI_API_KEY; skipped"
             return result
-        project_id = os.getenv("GEMINI_PROJECT_ID", "lyrical-marker-477423-q8")
+        project_id = os.getenv("GEMINI_PROJECT_ID")
         location = os.getenv("GEMINI_LOCATION", "global")
         model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
         client = GeminiClient(api_key=api_key, project_id=project_id, location=location, model=model)
@@ -160,7 +160,7 @@ async def analyze_image(request: Request, image_id: int, payload: AnalyzePayload
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("API_KEY")
     if not api_key:
         raise HTTPException(500, "Missing GEMINI_API_KEY or API_KEY env var")
-    project_id = os.getenv("GEMINI_PROJECT_ID", "lyrical-marker-477423-q8")
+    project_id = os.getenv("GEMINI_PROJECT_ID")
     location = os.getenv("GEMINI_LOCATION", "global")
     model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     client = GeminiClient(api_key=api_key, project_id=project_id, location=location, model=model)
@@ -258,7 +258,7 @@ async def analyze_inline(
     import os
 
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("API_KEY")
-    project_id = os.getenv("GEMINI_PROJECT_ID", "lyrical-marker-477423-q8")
+    project_id = os.getenv("GEMINI_PROJECT_ID")
     location = os.getenv("GEMINI_LOCATION", "global")
     model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     if not api_key:

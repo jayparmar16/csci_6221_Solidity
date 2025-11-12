@@ -13,7 +13,7 @@ This guide shows how to initialize and inspect the SQLite database, run the Fast
 Set these if you plan to use the Gemini analysis endpoint (`/images/analyze-inline`):
 ```bash
 export GEMINI_API_KEY="<YOUR_API_KEY>"
-export GEMINI_PROJECT_ID="lyrical-marker-477423-q8"
+export GEMINI_PROJECT_ID="PROJECT_ID"
 export GEMINI_LOCATION="global"      # or us-central1
 export GEMINI_MODEL="gemini-1.5-flash"
 ```

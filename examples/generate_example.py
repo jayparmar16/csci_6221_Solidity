@@ -7,7 +7,7 @@ def main() -> None:
     if not api_key:
         raise SystemExit("Set GEMINI_API_KEY or API_KEY environment variable.")
 
-    project_id = os.getenv("GEMINI_PROJECT_ID", "lyrical-marker-477423-q8")
+    project_id = os.getenv("GEMINI_PROJECT_ID")
     location = os.getenv("GEMINI_LOCATION", "global")
     model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 

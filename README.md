@@ -166,7 +166,7 @@ If embeddings were created without a running key, re-run analyze to populate the
 
 ## 9. Environment Variables
 - GEMINI_API_KEY / API_KEY: Vertex AI key
-- GEMINI_PROJECT_ID: Project id (default lyrical-marker-477423-q8)
+- GEMINI_PROJECT_ID: Project id
 - GEMINI_LOCATION: Region (default global)
 - GEMINI_MODEL: Model (default gemini-1.5-flash)
 
