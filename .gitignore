@@ -1,0 +1,66 @@
+# Python build / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+.envrc
+
+# Environment & secrets
+.env
+*.env.local
+*.key
+*key.json
+
+# SQLite database & local data
+/data.sqlite3
+*.sqlite3
+
+# Logs
+*.log
+log/
+logs/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Node / Hardhat (future blockchain integration)
+node_modules/
+.npm/
+.yarn/
+.pnp.*
+coverage/
+dist/
+build/
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings (optional keep .vscode if you want to share tasks)
+.vscode/
+
+# Python tooling
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# FAISS or temp vector artifacts (if later persisted)
+faiss_index.*
+
+# Generated artifacts
+*.egg-info/
+.eggs/
+
+# Docker
+*.tar
+
+# Misc
+*.bak
+*.tmp
