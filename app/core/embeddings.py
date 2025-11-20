@@ -2,53 +2,86 @@ from __future__ import annotations
 
 import os
 from dotenv import load_dotenv
+from app.utils.config import get_config
 import base64
 import requests
 import numpy as np
 import faiss
 from typing import Optional, Tuple, List
+import google.auth
+from google.auth.transport.requests import Request as GoogleAuthRequest
 
 
 class GeminiEmbeddingClient:
-    def __init__(self, api_key: Optional[str] = None, project_id: Optional[str] = None, location: str = "global", model: str = "gemini-embedding-001"):
+    def __init__(self, project_id: Optional[str] = None, location: str = "us-central1", model: str = "multimodalembedding@001"):
         # Load environment from .env (idempotent)
         load_dotenv(dotenv_path=os.getenv("DOTENV_PATH", ".env"))
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY") or os.getenv("API_KEY")
-        if not self.api_key:
-            raise ValueError("Missing GEMINI_API_KEY / GEMINI_KEY / API_KEY")
-        self.project_id = project_id or os.getenv("GEMINI_PROJECT_ID") or os.getenv("PROJECT_ID")
+        cfg = get_config()
+        
+        self.project_id = project_id or cfg.get("GEMINI_PROJECT_ID") or cfg.get("PROJECT_ID")
         if not self.project_id:
             raise ValueError("Missing project_id (GEMINI_PROJECT_ID / PROJECT_ID)")
-        self.location = location or os.getenv("GEMINI_LOCATION", "global")
-        self.model = model or os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+        
+        self.location = location or cfg.get("GEMINI_LOCATION") or "us-central1"
+        self.model = model or cfg.get("GEMINI_EMBEDDING_MODEL") or "multimodalembedding@001"
+        
+        # Initialize Google Cloud credentials with required scopes
+        self.scopes = [
+            "https://www.googleapis.com/auth/cloud-platform",
+            "https://www.googleapis.com/auth/generative-language"
+        ]
+        self.credentials, _ = google.auth.default(scopes=self.scopes)
+        
+    def _get_token(self) -> str:
+        """Get a valid access token, refreshing if necessary."""
+        if not self.credentials.valid:
+            self.credentials.refresh(GoogleAuthRequest())
+        return self.credentials.token
 
     def embed_image(self, image_bytes: bytes) -> np.ndarray:
+        """Embed an image using Vertex AI Multimodal Embedding with ADC authentication."""
         b64 = base64.b64encode(image_bytes).decode("utf-8")
+        
+        # Use Vertex AI Multimodal Embedding API for image embeddings
         url = (
             f"https://{self.location}-aiplatform.googleapis.com/v1/"
-            f"projects/{self.project_id}/locations/{self.location}/publishers/google/models/{self.model}:embedContent"
-            f"?key={self.api_key}"
+            f"projects/{self.project_id}/locations/{self.location}/"
+            f"publishers/google/models/{self.model}:predict"
         )
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "content": {
-                "role": "user",
-                "parts": [
-                    {"inline_data": {"mime_type": "image/jpeg", "data": b64}}
-                ]
-            }
+        
+        # Get fresh bearer token
+        token = self._get_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
         }
+        
+        payload = {
+            "instances": [
+                {
+                    "image": {
+                        "bytesBase64Encoded": b64
+                    }
+                }
+            ]
+        }
+        
         resp = requests.post(url, headers=headers, json=payload, timeout=60)
         if not resp.ok:
             raise requests.HTTPError(f"Embedding failed [{resp.status_code}]: {resp.text}")
         data = resp.json()
-        # Expected: { embeddings: { values: [ ... float ... ] } } or similar structure
+        
+        # Expected structure: { "predictions": [{ "imageEmbedding": [...] }] }
         try:
-            values = data.get("embeddings", {}).get("values")
-            if values is None:
-                # alternate structure if returned as list
-                values = data.get("embedding", {}).get("values")
-            vec = np.array(values, dtype=np.float32)
+            predictions = data.get("predictions", [])
+            if not predictions:
+                raise ValueError(f"No predictions in response: {data}")
+            
+            embedding = predictions[0].get("imageEmbedding")
+            if embedding is None:
+                raise ValueError(f"No imageEmbedding in response: {data}")
+            
+            vec = np.array(embedding, dtype=np.float32)
             return vec
         except Exception:
             raise ValueError(f"Unexpected embedding response: {data}")
