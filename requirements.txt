@@ -6,3 +6,6 @@ Pillow>=10.4.0
 numpy>=1.26.0
 faiss-cpu>=1.8.0
 python-dotenv>=1.0.1
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-cloud-iam>=2.12.0
