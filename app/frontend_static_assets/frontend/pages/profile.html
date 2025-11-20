@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Dashboard - AI Image Voting</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/profile.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👤 Profile Dashboard</h1>
+            <p class="subtitle">View your voting history and claim rewards</p>
+            
+            <!-- Wallet Connection -->
+            <div class="wallet-section">
+                <div id="walletDisconnected" class="wallet-status">
+                    <button id="connectWalletBtn" class="btn btn-wallet">
+                        🦊 Connect MetaMask
+                    </button>
+                    <p class="wallet-info">Connect your wallet to view your profile</p>
+                </div>
+                <div id="walletConnected" class="wallet-details" style="display: none;">
+                    <span class="wallet-address" id="walletAddress"></span>
+                    <span class="wallet-balance" id="walletBalance"></span>
+                    <button id="disconnectWalletBtn" class="btn btn-sm">Disconnect</button>
+                    <a href="/static/index.html" class="btn btn-sm">Back to Gallery</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Profile Stats -->
+        <section id="profileSection" class="profile-section" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Votes</div>
+                        <div class="stat-value" id="totalVotes">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Correct Votes</div>
+                        <div class="stat-value" id="correctVotes">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Accuracy Rate</div>
+                        <div class="stat-value" id="accuracyRate">0%</div>
+                    </div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Rewards Earned</div>
+                        <div class="stat-value" id="totalRewards">0 AIVT</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Rewards Section -->
+            <div class="rewards-section">
+                <h2>🎁 Pending Rewards</h2>
+                <div class="pending-rewards-card">
+                    <div class="pending-summary">
+                        <div class="pending-amount" id="pendingAmount">0 AIVT</div>
+                        <div class="pending-count" id="pendingCount">0 rewards ready to claim</div>
+                    </div>
+                    <button id="claimAllBtn" class="btn btn-primary" disabled>
+                        Claim All Rewards
+                    </button>
+                </div>
+                <div id="claimableList" class="claimable-list"></div>
+            </div>
+
+            <!-- Tabs for Voting History and Reward History -->
+            <div class="tabs-section">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="votes">Voting History</button>
+                    <button class="tab-btn" data-tab="rewards">Reward History</button>
+                </div>
+
+                <!-- Voting History Tab -->
+                <div id="votesTab" class="tab-content active">
+                    <div class="history-header">
+                        <h3>Your Votes</h3>
+                        <div class="filter-badges">
+                            <button class="badge-filter active" data-filter="all">All</button>
+                            <button class="badge-filter" data-filter="correct">Correct</button>
+                            <button class="badge-filter" data-filter="pending">Pending</button>
+                        </div>
+                    </div>
+                    <div id="votesHistory" class="history-list"></div>
+                    <div id="votesLoading" class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Loading voting history...</p>
+                    </div>
+                </div>
+
+                <!-- Reward History Tab -->
+                <div id="rewardsTab" class="tab-content">
+                    <div class="history-header">
+                        <h3>Your Rewards</h3>
+                    </div>
+                    <div id="rewardsHistory" class="history-list"></div>
+                    <div id="rewardsLoading" class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Loading reward history...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Not Connected Message -->
+        <section id="notConnectedSection" class="not-connected-section">
+            <div class="empty-state">
+                <div class="empty-icon">👤</div>
+                <h3>Connect Your Wallet</h3>
+                <p>Connect your MetaMask wallet to view your profile, voting history, and claim rewards.</p>
+                <button onclick="document.getElementById('connectWalletBtn').click()" class="btn btn-primary">
+                    Connect MetaMask
+                </button>
+            </div>
+        </section>
+
+        <!-- Console Log -->
+        <section class="console-section">
+            <h3>📋 Activity Log</h3>
+            <div id="consoleLog" class="console-log"></div>
+        </section>
+    </div>
+
+    <script src="/static/web3Manager.js"></script>
+    <script src="/static/profile.js"></script>
+</body>
+</html>
