@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Auditor</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Ethers.js CDN - Try jsDelivr first, fallback to ethers.io -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" 
+            onerror="this.onerror=null; var s=document.createElement('script'); s.src='https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js'; document.head.appendChild(s);"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 AI Image Auditor</h1>
+            <p class="subtitle">Detect, Vote, and Verify AI-Generated Images</p>
+            
+            <!-- Wallet Connection Section -->
+            <div class="wallet-section">
+                <div id="walletDisconnected" class="wallet-status">
+                    <button id="connectWalletBtn" class="btn btn-wallet">
+                        🦊 Connect MetaMask
+                    </button>
+                    <p class="wallet-info">Connect your wallet to vote on blockchain</p>
+                </div>
+                <div id="walletConnected" class="wallet-details" style="display: none;">
+                    <span class="wallet-address" id="walletAddress"></span>
+                    <span class="wallet-balance" id="walletBalance"></span>
+                    <span class="network-badge" id="walletNetwork"></span>
+                    <a href="/static/profile.html" class="btn btn-sm btn-profile">👤 Profile</a>
+                    <button id="disconnectWalletBtn" class="btn btn-sm">Disconnect</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <h2>📤 Upload Image</h2>
+            <div class="upload-container">
+                <input type="file" id="imageInput" accept="image/*" class="file-input">
+                <label for="imageInput" class="file-label">
+                    <span id="fileName">Choose an image...</span>
+                </label>
+                <div class="upload-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="analyzeCheckbox" checked>
+                        Run AI Analysis
+                    </label>
+                </div>
+                <button id="uploadBtn" class="btn btn-primary" disabled>
+                    <span class="btn-text">Upload & Analyze</span>
+                    <span class="loader" style="display: none;"></span>
+                </button>
+            </div>
+            <div id="uploadStatus" class="status-message"></div>
+        </section>
+
+        <!-- Filter Section -->
+        <section class="filter-section">
+            <h2>🖼️ Image Gallery</h2>
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">All Images</button>
+                <button class="filter-btn" data-filter="ai">AI Generated</button>
+                <button class="filter-btn" data-filter="human">Human Created</button>
+                <button class="filter-btn" data-filter="unanalyzed">Not Analyzed</button>
+            </div>
+            <div class="stats">
+                <span>Total: <strong id="totalCount">0</strong></span>
+                <span>AI: <strong id="aiCount">0</strong></span>
+                <span>Human: <strong id="humanCount">0</strong></span>
+            </div>
+        </section>
+
+        <!-- Images Grid -->
+        <section class="images-section">
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading images...</p>
+            </div>
+            <div id="imagesGrid" class="images-grid"></div>
+            <div id="noImages" class="no-images" style="display: none;">
+                <p>📭 No images found. Upload one to get started!</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image-container">
+                    <img id="modalImage" src="" alt="Full size image">
+                </div>
+                <div class="modal-details">
+                    <h3>Image Details</h3>
+                    <div id="modalInfo"></div>
+                    
+                    <div class="voting-section">
+                        <h4>Community Vote</h4>
+                        
+                        <!-- Blockchain Voting Info -->
+                        <div id="blockchainInfo" class="blockchain-info" style="display: none;">
+                            <p class="blockchain-badge">⛓️ Blockchain Voting Enabled</p>
+                            <p class="blockchain-details">
+                                <small>Blockchain ID: <span id="blockchainId"></span></small><br>
+                                <small><a id="etherscanLink" href="#" target="_blank">View on Etherscan →</a></small>
+                            </p>
+                        </div>
+                        
+                        <div class="vote-stats" id="voteStats"></div>
+                        
+                        <!-- Vote Buttons -->
+                        <div class="vote-buttons">
+                            <button class="vote-btn vote-ai" data-vote="ai" id="voteAiBtn">
+                                🤖 Vote AI
+                            </button>
+                            <button class="vote-btn vote-human" data-vote="human" id="voteHumanBtn">
+                                👤 Vote Human
+                            </button>
+                        </div>
+                        
+                        <!-- Blockchain Vote Buttons (Hidden by default) -->
+                        <div id="blockchainVoteButtons" class="blockchain-vote-buttons" style="display: none;">
+                            <button class="vote-btn vote-ai blockchain" data-vote="ai" id="blockchainVoteAiBtn">
+                                ⛓️ Vote AI (Blockchain)
+                            </button>
+                            <button class="vote-btn vote-human blockchain" data-vote="human" id="blockchainVoteHumanBtn">
+                                ⛓️ Vote Human (Blockchain)
+                            </button>
+                            <p class="gas-estimate" id="gasEstimate"></p>
+                        </div>
+                        
+                        <div id="voteStatus" class="vote-status"></div>
+                        <div id="txStatus" class="tx-status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Console -->
+    <div class="console-container">
+        <div class="console-header" id="consoleHeader">
+            <span class="console-title">
+                <span class="console-icon">📋</span>
+                Activity Console
+                <span class="console-badge" id="logCount">0</span>
+            </span>
+            <button class="console-toggle" id="consoleToggle">
+                <span id="toggleIcon">▲</span> <span id="toggleText">Show</span>
+            </button>
+        </div>
+        <div class="console-body" id="consoleBody" style="display: none;">
+            <div class="console-controls">
+                <button class="console-btn" id="clearLogsBtn">🗑️ Clear Logs</button>
+                <button class="console-btn" id="copyLogsBtn">📋 Copy All</button>
+            </div>
+            <div class="console-logs" id="consoleLogs">
+                <div class="console-entry console-info">
+                    <span class="console-time">[System]</span>
+                    <span class="console-message">Activity console initialized. All blockchain and analysis events will be logged here.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/web3.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>

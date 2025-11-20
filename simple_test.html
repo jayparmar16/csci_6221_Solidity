@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple MetaMask Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            display: block;
+            width: 100%;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .output {
+            background: #263238;
+            color: #aed581;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-top: 20px;
+            min-height: 200px;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: #66bb6a;
+        }
+        .error {
+            color: #ef5350;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦊 Simple MetaMask Test</h1>
+        <p>Click buttons to test MetaMask functionality</p>
+        
+        <button id="btn1">1. Check if MetaMask is Installed</button>
+        <button id="btn2">2. Connect Wallet</button>
+        <button id="btn3">3. Get Balance</button>
+        <button id="btn4">4. Get Network</button>
+        <button id="btn5" style="background: #667eea;">5. Switch to Sepolia Network</button>
+        <button id="clearBtn">Clear Output</button>
+        
+        <div class="output" id="output">Ready... Click a button above to start testing.</div>
+    </div>
+    
+    <!-- Try multiple CDN sources -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" 
+            onerror="console.error('jsDelivr CDN failed')"></script>
+    <script>
+        // Fallback to ethers.io CDN if jsDelivr fails
+        if (typeof ethers === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js';
+            script.onerror = () => console.error('ethers.io CDN also failed');
+            document.head.appendChild(script);
+        }
+    </script>
+    <script>
+        const output = document.getElementById('output');
+        let ethersReady = false;
+        
+        // Wait for ethers to load
+        function waitForEthers() {
+            return new Promise((resolve) => {
+                if (typeof ethers !== 'undefined') {
+                    ethersReady = true;
+                    resolve();
+                    return;
+                }
+                
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof ethers !== 'undefined') {
+                        clearInterval(checkInterval);
+                        ethersReady = true;
+                        log('✅ Ethers.js loaded successfully', 'success');
+                        resolve();
+                    } else if (attempts > 50) {
+                        clearInterval(checkInterval);
+                        log('❌ Failed to load Ethers.js after 5 seconds', 'error');
+                        resolve(); // Resolve anyway to not block
+                    }
+                }, 100);
+            });
+        }
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : '🔵';
+            const color = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            output.innerHTML += `\n<span class="${color}">[${timestamp}] ${icon} ${message}</span>`;
+            output.scrollTop = output.scrollHeight;
+            console.log(`${icon} ${message}`);
+        }
+        
+        // Test 1: Check MetaMask
+        document.getElementById('btn1').addEventListener('click', function() {
+            log('Testing MetaMask detection...');
+            
+            if (typeof window.ethereum !== 'undefined') {
+                log('✅ MetaMask is installed!', 'success');
+                log(`  Provider type: ${window.ethereum.isMetaMask ? 'MetaMask' : 'Other'}`);
+                log(`  Chain ID: ${window.ethereum.chainId || 'not set'}`);
+            } else {
+                log('❌ MetaMask not found!', 'error');
+                log('  Please install MetaMask extension', 'error');
+            }
+        });
+        
+        // Test 2: Connect Wallet
+        document.getElementById('btn2').addEventListener('click', async function() {
+            log('Connecting to wallet...');
+            
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('MetaMask not installed');
+                }
+                
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                log(`✅ Connected: ${accounts[0]}`, 'success');
+                log(`  Address: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`);
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Test 3: Get Balance
+        document.getElementById('btn3').addEventListener('click', async function() {
+            log('Getting balance...');
+            
+            try {
+                if (!ethersReady) {
+                    log('Waiting for Ethers.js to load...', 'info');
+                    await waitForEthers();
+                }
+                
+                if (typeof ethers === 'undefined') {
+                    throw new Error('Ethers.js failed to load');
+                }
+                
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+                const balance = await provider.getBalance(address);
+                const balanceInEth = ethers.utils.formatEther(balance);
+                
+                log(`✅ Balance: ${parseFloat(balanceInEth).toFixed(4)} ETH`, 'success');
+                log(`  Address: ${address.substring(0, 6)}...${address.substring(38)}`);
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                if (error.message.includes('getSigner')) {
+                    log('  Hint: Connect wallet first (button 2)', 'error');
+                }
+            }
+        });
+        
+        // Test 4: Get Network
+        document.getElementById('btn4').addEventListener('click', async function() {
+            log('Getting network info...');
+            
+            try {
+                if (!ethersReady) {
+                    log('Waiting for Ethers.js to load...', 'info');
+                    await waitForEthers();
+                }
+                
+                if (typeof ethers === 'undefined') {
+                    throw new Error('Ethers.js failed to load');
+                }
+                
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const network = await provider.getNetwork();
+                
+                log(`Network Info:`, 'info');
+                log(`  Name: ${network.name}`, 'info');
+                log(`  Chain ID: ${network.chainId}`, 'info');
+                
+                if (network.chainId === 11155111) {
+                    log(`✅ Connected to Sepolia testnet!`, 'success');
+                } else {
+                    log(`❌ WRONG NETWORK!`, 'error');
+                    log(`  Current: ${network.name} (Chain ID: ${network.chainId})`, 'error');
+                    log(`  Expected: Sepolia (Chain ID: 11155111)`, 'error');
+                    log(``, 'info');
+                    log(`🔧 HOW TO FIX:`, 'info');
+                    log(`  1. Open MetaMask extension`, 'info');
+                    log(`  2. Click network dropdown at top`, 'info');
+                    log(`  3. Select "Sepolia test network"`, 'info');
+                    log(`  4. If not visible: Settings → Advanced → "Show test networks"`, 'info');
+                    log(`  5. Or click button 5 below to auto-switch!`, 'info');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Button 5: Switch to Sepolia network
+        document.getElementById('btn5').addEventListener('click', async function() {
+            log('Requesting network switch to Sepolia...');
+            
+            try {
+                if (!window.ethereum) {
+                    throw new Error('MetaMask not detected');
+                }
+                
+                // Request network switch
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0xaa36a7' }], // Sepolia chain ID in hex
+                });
+                
+                log('✅ Successfully switched to Sepolia!', 'success');
+                log('  Now try button 3 (Get Balance) and 4 (Get Network)', 'info');
+                
+            } catch (error) {
+                // If network not added to MetaMask, add it
+                if (error.code === 4902) {
+                    log('Sepolia not found. Adding it to MetaMask...', 'info');
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0xaa36a7',
+                                chainName: 'Sepolia',
+                                nativeCurrency: {
+                                    name: 'Sepolia ETH',
+                                    symbol: 'ETH',
+                                    decimals: 18
+                                },
+                                rpcUrls: ['https://rpc.sepolia.org'],
+                                blockExplorerUrls: ['https://sepolia.etherscan.io']
+                            }]
+                        });
+                        log('✅ Sepolia network added and switched!', 'success');
+                    } catch (addError) {
+                        log(`❌ Error adding network: ${addError.message}`, 'error');
+                    }
+                } else if (error.code === 4001) {
+                    log('❌ User rejected network switch', 'error');
+                } else {
+                    log(`❌ Error: ${error.message}`, 'error');
+                }
+            }
+        });
+        
+        // Clear button
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            output.innerHTML = 'Output cleared. Click buttons above to test.';
+        });
+        
+        // Auto-check on page load
+        window.addEventListener('load', async function() {
+            setTimeout(async () => {
+                log('Page loaded. Checking environment...');
+                log(`  window.ethereum: ${typeof window.ethereum !== 'undefined' ? '✅ Found' : '❌ Not found'}`);
+                
+                // Wait for ethers to load
+                await waitForEthers();
+                log(`  ethers.js: ${typeof ethers !== 'undefined' ? '✅ Loaded' : '❌ Not loaded'}`);
+                
+                if (typeof window.ethereum !== 'undefined') {
+                    log('✅ MetaMask detected automatically!', 'success');
+                } else {
+                    log('⚠️ MetaMask not detected. Install it or try refreshing.', 'error');
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
